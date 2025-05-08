@@ -2,12 +2,11 @@ import functions_framework
 from flask import jsonify, Request
 from typing import Optional, List, Dict, Any, Tuple
 import os
-import openai_utils
-from linkedin_api import LinkedInAPI
-import json
+import utils.openai.openai_utils as openai_utils
+from api.linkedin_api import LinkedInAPI
 import logging
 from agents import Runner
-from email_send import send_email  # Import the email sending function
+from utils.email.email_send import send_email  # Import the email sending function
 import requests
 
 # Configure logging

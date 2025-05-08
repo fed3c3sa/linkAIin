@@ -1,8 +1,10 @@
-import logging
 
 from agents import function_tool
-from typing import Any, Dict
-from typing import List
+from openai import OpenAI
+
+import os
+import logging
+
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -20,13 +22,6 @@ def generate_linkedin_image(prompt: str) -> str:
     Returns:
         str: URL of the generated image
     """
-    # We'll use the globally available client instead of passing it as a parameter
-    from openai import OpenAI
-    import os
-    import logging
-    
-    logger = logging.getLogger(__name__)
-    
     try:
         client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
         

@@ -2,8 +2,8 @@
 agents.py – AI-agent definitions for research, LinkedIn-post writing, and image creation.
 """
 
-from agents import Agent, function_tool, WebSearchTool
-from tools import generate_linkedin_image
+from agents import Agent, WebSearchTool
+from agents_src.tools.tools import generate_linkedin_image
 from typing import Dict, Any
 import os 
 

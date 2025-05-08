@@ -1,14 +1,14 @@
 from typing import List, Dict, Optional
 from agents import Runner
-from ai_agents import search_agent, linkedin_poster_agent, image_generation_agent
+from agents_src.ai_agents import search_agent, linkedin_poster_agent, image_generation_agent
 from config import get_default_config
-from tools import generate_linkedin_image
 
 import json
 import asyncio
-import openai
+import utils.openai.openai_utils as openai_utils
 import nest_asyncio
 import logging
+import openai
 
 # Configure logging
 logger = logging.getLogger(__name__)
