@@ -33,7 +33,7 @@ class TestEmailSending(unittest.TestCase):
         
         # Call the function
         result = send_email(
-            sender_email=self.sender_email,
+            sender_email=self.sender_email,  # Make sure sender_email is first parameter
             app_password=self.app_password,
             recipient_email=self.recipient_email,
             subject=self.subject,
@@ -60,7 +60,7 @@ class TestEmailSending(unittest.TestCase):
         
         # Call the function
         result = send_email(
-            sender_email=self.sender_email,
+            sender_email=self.sender_email,  # Make sure sender_email is first parameter
             app_password=self.app_password,
             recipient_email=self.recipient_email,
             subject=self.subject,
@@ -98,7 +98,7 @@ class TestEmailSending(unittest.TestCase):
         
         # Call the function
         result = send_email(
-            sender_email=self.sender_email,
+            sender_email=self.sender_email,  # Make sure sender_email is first parameter
             app_password=self.app_password,
             recipient_email=self.recipient_email,
             subject=self.subject,
@@ -126,7 +126,7 @@ class TestEmailSending(unittest.TestCase):
         
         # Call the function
         result = send_email(
-            sender_email=self.sender_email,
+            sender_email=self.sender_email,  # Make sure sender_email is first parameter
             app_password=self.app_password,
             recipient_email=self.recipient_email,
             subject=self.subject,
@@ -152,7 +152,7 @@ class TestEmailSending(unittest.TestCase):
         
         # Call the function
         result = send_email(
-            sender_email=self.sender_email,
+            sender_email=self.sender_email,  # Make sure sender_email is first parameter
             app_password=self.app_password,
             recipient_email=self.recipient_email,
             subject=self.subject,

@@ -85,7 +85,7 @@ class TestLinkedInAIPoster(unittest.TestCase):
         mock_analyze.return_value = {"engagement_score": 85, "suggested_improvements": []}
         mock_send_email.return_value = True
         
-        # Create request with email delivery
+        # Create request with email delivery - add sender_email parameter
         email_request_data = {
             'openai_api_key': 'test_api_key',
             'topic': 'AI in Healthcare',
@@ -93,7 +93,8 @@ class TestLinkedInAIPoster(unittest.TestCase):
             'post_to_linkedin': False,
             'send_email': True,
             'email_app_password': 'test_password',
-            'destination_email': 'test@example.com'
+            'destination_email': 'test@example.com',
+            'sender_email': 'sender@example.com'  # Add the sender_email parameter
         }
         mock_request = self._create_mock_request(email_request_data)
         
@@ -111,7 +112,15 @@ class TestLinkedInAIPoster(unittest.TestCase):
         # Verify mock calls
         mock_set_api_env.assert_called_once_with('test_api_key')
         mock_setup_client.assert_called_once()
-        mock_send_email.assert_called_once()
+        mock_send_email.assert_called_once_with(
+            sender_email='sender@example.com',  # Verify sender_email is passed correctly
+            recipient_email='test@example.com',
+            subject=ANY,  # Use ANY for fields we don't need to strictly verify
+            body=ANY,
+            app_password='test_password',
+            html_body=ANY,
+            image_data=ANY
+        )
 
     def test_invalid_request_method(self):
         """Test rejection of non-POST requests"""
@@ -158,6 +167,7 @@ class TestLinkedInAIPoster(unittest.TestCase):
         request_data['send_email'] = True
         request_data['email_app_password'] = 'test_password'
         request_data['destination_email'] = 'test@example.com'
+        request_data['sender_email'] = 'sender@example.com'  # Add sender_email
         mock_request = self._create_mock_request(request_data)
         
         response, status_code = main.linkedin_ai_poster(mock_request)
@@ -168,6 +178,8 @@ class TestLinkedInAIPoster(unittest.TestCase):
         self.assertEqual(response_data['error'], 
                          'Cannot both post to LinkedIn and send email - please choose one delivery method')
 
+
+from unittest.mock import ANY  # Import ANY matcher for flexible assertions
 
 if __name__ == '__main__':
     unittest.main()

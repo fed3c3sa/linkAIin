@@ -73,6 +73,7 @@ def linkedin_ai_poster(request):
             - send_email (bool, optional): Flag to send the post content via email (default: False)
             - email_app_password (str, conditional): App password for email sending (required if send_email is True)
             - destination_email (str, conditional): Email address to send the post to (required if send_email is True)
+            - sender_email (str, conditional): Email address to send the post from (required if send_email is True)
     
     Returns:
         tuple: A tuple containing:
@@ -139,6 +140,7 @@ def linkedin_ai_poster(request):
         linkedin_token = request_json.get('linkedin_token') if post_to_linkedin else None
         email_app_password = request_json.get('email_app_password') if send_email_flag else None
         destination_email = request_json.get('destination_email') if send_email_flag else None
+        sender_email = request_json.get('sender_email') if send_email_flag else None
         
         # Validate delivery-specific parameters
         if post_to_linkedin and not linkedin_token:
@@ -157,6 +159,11 @@ def linkedin_ai_poster(request):
                 return jsonify({
                     'success': False,
                     'error': 'Missing destination email for email delivery'
+                }), 400
+            if not sender_email:
+                return jsonify({
+                    'success': False,
+                    'error': 'Missing sender email for email delivery'
                 }), 400
         
         # Set OpenAI API key in environment for agents SDK
@@ -314,7 +321,7 @@ def linkedin_ai_poster(request):
                 
                 # Call the email_send module's send_email function with HTML support
                 send_email(
-                    sender_email=destination_email,
+                    sender_email=sender_email,
                     recipient_email=destination_email,
                     subject=email_subject,
                     body=plain_email_body,
