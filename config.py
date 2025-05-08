@@ -4,7 +4,7 @@ from dataclasses import dataclass
 @dataclass
 class OpenAIConfig:
     """Configuration settings for OpenAI integration."""
-    model: str = "gpt-4"  # Default model for text generation
+    model: str = "gpt-4o"  # Default model for text generation
     image_model: str = "gpt-image-1"  # Updated default model for image generation
     temperature: float = 0.7
     max_tokens: int = 4000

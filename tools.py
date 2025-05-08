@@ -1,5 +1,12 @@
+import logging
+
 from agents import function_tool
 from typing import Any, Dict
+from typing import List
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 @function_tool
 def generate_linkedin_image(prompt: str) -> str:

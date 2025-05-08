@@ -1,10 +1,12 @@
 from typing import List, Dict, Optional
 from agents import Runner
 from ai_agents import search_agent, linkedin_poster_agent, image_generation_agent
-import openai
 from config import get_default_config
 from tools import generate_linkedin_image
+
+import json
 import asyncio
+import openai
 import nest_asyncio
 import logging
 
@@ -53,28 +55,28 @@ def search_web_content(topic: str, links: Optional[List[str]] = None) -> Dict:
         Exception: If the search or analysis fails
     """
     try:
-        # Create search query
-        search_query = f"Latest information about {topic}"
-        
-        # Add specific links if provided
-        if links:
-            search_query += f" focusing on these sources: {', '.join(links)}"
-        
-        # Create a new event loop if one doesn't exist
+
+        # --- build structured payload the agent expects ----------------
+        payload_msg = {
+            "role": "user",
+            "content": json.dumps({"topic": topic, "links": links or []})
+        }  # API requires role+content keys :contentReference[oaicite:0]{index=0}
+
+        # Create / recover event loop (original logic)
         try:
             loop = asyncio.get_event_loop()
             if loop.is_closed():
                 raise RuntimeError("Event loop is closed")
         except (RuntimeError, AssertionError):
-            # Create a new event loop and set it as the current one
             loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        
-        # Define an async function to run the agent
+            asyncio.set_event_loop(loop)   # create a fresh loop :contentReference[oaicite:1]{index=1}
+
+        # Async wrapper (only call signature changed)
         async def run_search_agent():
-            return await Runner.run(search_agent, search_query)
-        
-        # Run the async function in the event loop
+            # Runner wants a list of messages, so wrap payload_msg in []
+            return await Runner.run(search_agent, [payload_msg])  # ← CHANGED
+
+        # Run coroutine (original logic)
         if loop.is_running():
             # Use nest_asyncio to run in an already running loop
             result = asyncio.run_coroutine_threadsafe(
@@ -123,17 +125,49 @@ def generate_linkedin_post(topic: str,
         max_length = config["post"].default_max_length
     
     try:
-        # Format the input for the LinkedIn post generator agent
+        # Ensure search_results is properly parsed if it's a string
+        if isinstance(search_results, str):
+            try:
+                search_results_dict = json.loads(search_results)
+            except json.JSONDecodeError:
+                # If not valid JSON, keep it as is
+                search_results_dict = {"summary": search_results}
+        else:
+            search_results_dict = search_results
+        
+        # Format the input for the LinkedIn post generator agent with proper structure
         input_text = f"""
         Generate a LinkedIn post about {topic} within {max_length} characters.
         
         Use these search results:
-        
-        Summary: {search_results}
-        
-        
-        Use maximum {config["post"].max_hashtags} hashtags and follow LinkedIn best practices.
         """
+        
+        # Add verified facts if they exist
+        if "verified" in search_results_dict and search_results_dict["verified"]:
+            input_text += "\nVERIFIED FACTS (from your specified links):\n"
+            for fact in search_results_dict["verified"]:
+                fact_str = json.dumps(fact) if isinstance(fact, dict) else str(fact)
+                input_text += f"- {fact_str}\n"
+        
+        # Add additional facts if they exist
+        if "additional" in search_results_dict and search_results_dict["additional"]:
+            input_text += "\nADDITIONAL FACTS:\n"
+            for fact in search_results_dict["additional"]:
+                fact_str = json.dumps(fact) if isinstance(fact, dict) else str(fact)
+                input_text += f"- {fact_str}\n"
+        
+        # Add stats if they exist
+        if "stats" in search_results_dict and search_results_dict["stats"]:
+            input_text += "\nSTATS:\n"
+            for stat in search_results_dict["stats"]:
+                stat_str = json.dumps(stat) if isinstance(stat, dict) else str(stat)
+                input_text += f"- {stat_str}\n"
+        
+        # Add summary if it exists
+        if "summary" in search_results_dict:
+            input_text += f"\nSUMMARY:\n{search_results_dict['summary']}\n"
+        
+        input_text += f"\nUse maximum {config['post'].max_hashtags} hashtags and follow LinkedIn best practices."
         
         # Create a new event loop if one doesn't exist
         try:
@@ -239,60 +273,15 @@ def generate_post_image(topic: str, post_content: str, client) -> str:
         
         # Check if the result is a valid URL
         if not image_url or not isinstance(image_url, str) or not image_url.startswith("http"):
-            logger.warning("Agent did not return a valid image URL. Attempting fallback...")
-            
-            # Fallback: try to extract a prompt from the result and generate image directly
-            if hasattr(result, 'messages') and result.messages:
-                prompt_text = None
-                for msg in result.messages:
-                    if hasattr(msg, 'content') and msg.content:
-                        # Look for a detailed image description
-                        for line in msg.content.split('\n'):
-                            if len(line) > 40 and ":" not in line[:10] and not line.startswith("generate_linkedin_image"):
-                                prompt_text = line
-                                break
-                
-                if prompt_text:
-                    # Try using our tool function directly
-                    try:
-                        image_url = generate_linkedin_image(prompt=prompt_text)
-                    except Exception as e:
-                        logger.error(f"Fallback attempt 1 failed: {str(e)}")
-                        # Last resort - direct API call
-                        response = client.images.generate(
-                            model="dall-e-3",
-                            prompt=f"Professional business image related to {topic}",
-                            n=1,
-                            size="1024x1024",
-                            quality="standard"
-                        )
-                        image_url = response.data[0].url
-                else:
-                    # Last resort - direct API call
-                    response = client.images.generate(
-                        model="dall-e-3",
-                        prompt=f"Professional business image related to {topic}",
-                        n=1,
-                        size="1024x1024",
-                        quality="standard"
-                    )
-                    image_url = response.data[0].url
-            else:
-                # Last resort - direct API call
-                response = client.images.generate(
-                    model="dall-e-3",
-                    prompt=f"Professional business image related to {topic}",
-                    n=1,
-                    size="1024x1024",
-                    quality="standard"
-                )
-                image_url = response.data[0].url
+            logger.error("Agent did not return a valid image URL.")
+            raise Exception("Agent failed to generate a valid image URL")
         
         return image_url
     
     except Exception as e:
         logger.error(f"Error in generate_post_image: {str(e)}")
         raise Exception(f"Failed to generate post image: {str(e)}")
+
 
 def analyze_engagement_potential(post_content: str) -> Dict:
     """
