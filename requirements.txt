@@ -1,0 +1,11 @@
+functions-framework==3.*
+flask==2.*
+requests==2.*
+openai==1.*
+python-dotenv==1.*
+linkedin-api==2.*
+Pillow==10.*
+beautifulsoup4==4.*
+aiohttp==3.*
+tenacity==8.*
+python-dateutil==2.* 
